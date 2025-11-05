@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  BarChart3, 
-  Users, 
-  CheckCircle, 
-  Clock, 
-  XCircle, 
-  TrendingUp, 
-  TrendingDown,
+import {
+  BarChart3,
+  Users,
+  CheckCircle,
+  Clock,
+  XCircle,
+  TrendingUp,
   AlertCircle,
   FileText,
   Calendar,
-  Filter
+  Filter,
+  Download,
+  RefreshCw
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,23 +42,26 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockKYCData, getStatusColor } from "@/lib/mockData";
+import { Navbar } from "@/components/Navbar";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [timeFilter, setTimeFilter] = useState<string>("all");
+
+  const handleLogout = () => {
+    navigate("/");
+  };
 
   const filteredData = mockKYCData.filter((record) => {
     const matchesSearch =
       record.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       record.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       record.email.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const matchesStatus = statusFilter === "all" || record.status === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -81,7 +85,6 @@ const Dashboard = () => {
     });
   };
 
-  // Chart data
   const statusChartData = [
     { name: "Approved", value: stats.approved, color: "hsl(var(--chart-2))" },
     { name: "Pending", value: stats.pending, color: "hsl(var(--muted-foreground))" },
@@ -122,32 +125,36 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-background">
+      <Navbar isAuthenticated={true} userName="Admin User" onLogout={handleLogout} />
+
+      <div className="container mx-auto p-4 md:p-8 space-y-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold">KYC Dashboard</h1>
+            <h1 className="text-4xl font-bold">Dashboard</h1>
             <p className="text-muted-foreground mt-1">
               Manage and monitor KYC verifications
             </p>
           </div>
-          <button
-            onClick={() => navigate("/user/kyc")}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            New KYC Submission
-          </button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+            <Button onClick={() => navigate("/user/kyc")}>
+              New KYC Submission
+            </Button>
+          </div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total KYC</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
+              <div className="text-3xl font-bold">{stats.total}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 <span className="text-success inline-flex items-center">
                   <TrendingUp className="h-3 w-3 mr-1" />
@@ -158,13 +165,13 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Approval Rate</CardTitle>
               <CheckCircle className="h-4 w-4 text-success" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-success">
+              <div className="text-3xl font-bold text-success">
                 {stats.approvalRate}%
               </div>
               <p className="text-xs text-muted-foreground mt-1">
@@ -173,26 +180,26 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Avg. Processing</CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.avgProcessingTime}</div>
+              <div className="text-3xl font-bold">{stats.avgProcessingTime}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 Per KYC application
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Today</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.todaySubmissions}</div>
+              <div className="text-3xl font-bold">{stats.todaySubmissions}</div>
               <p className="text-xs text-muted-foreground mt-1">
                 New submissions
               </p>
@@ -200,63 +207,59 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Quick Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-success/5 border-success/20">
+          <Card className="bg-gradient-to-br from-success/10 to-success/5 border-success/20 hover:shadow-lg transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Approved</p>
-                  <p className="text-2xl font-bold text-success">{stats.approved}</p>
+                  <p className="text-3xl font-bold text-success">{stats.approved}</p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-success" />
+                <CheckCircle className="h-10 w-10 text-success" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-muted/50 border-muted">
+          <Card className="bg-gradient-to-br from-muted/50 to-muted/20 border-muted hover:shadow-lg transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Pending</p>
-                  <p className="text-2xl font-bold">{stats.pending}</p>
+                  <p className="text-3xl font-bold">{stats.pending}</p>
                 </div>
-                <Clock className="h-8 w-8 text-muted-foreground" />
+                <Clock className="h-10 w-10 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-warning/5 border-warning/20">
+          <Card className="bg-gradient-to-br from-warning/10 to-warning/5 border-warning/20 hover:shadow-lg transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Under Review</p>
-                  <p className="text-2xl font-bold text-warning">{stats.underReview}</p>
+                  <p className="text-3xl font-bold text-warning">{stats.underReview}</p>
                 </div>
-                <BarChart3 className="h-8 w-8 text-warning" />
+                <BarChart3 className="h-10 w-10 text-warning" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-destructive/5 border-destructive/20">
+          <Card className="bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/20 hover:shadow-lg transition-shadow">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Rejected</p>
-                  <p className="text-2xl font-bold text-destructive">{stats.rejected}</p>
+                  <p className="text-3xl font-bold text-destructive">{stats.rejected}</p>
                 </div>
-                <XCircle className="h-8 w-8 text-destructive" />
+                <XCircle className="h-10 w-10 text-destructive" />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Charts */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Monthly Submissions Bar Chart */}
-            <Card>
+            <Card className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <CardTitle>Monthly KYC Submissions</CardTitle>
               </CardHeader>
@@ -264,10 +267,7 @@ const Dashboard = () => {
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={monthlyData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis
-                      dataKey="month"
-                      stroke="hsl(var(--muted-foreground))"
-                    />
+                    <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
                     <YAxis stroke="hsl(var(--muted-foreground))" />
                     <Tooltip
                       contentStyle={{
@@ -277,25 +277,14 @@ const Dashboard = () => {
                       }}
                     />
                     <Legend />
-                    <Bar
-                      dataKey="submissions"
-                      fill="hsl(var(--chart-1))"
-                      name="Total Submissions"
-                      radius={[8, 8, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="approved"
-                      fill="hsl(var(--chart-2))"
-                      name="Approved"
-                      radius={[8, 8, 0, 0]}
-                    />
+                    <Bar dataKey="submissions" fill="hsl(var(--chart-1))" name="Total Submissions" radius={[8, 8, 0, 0]} />
+                    <Bar dataKey="approved" fill="hsl(var(--chart-2))" name="Approved" radius={[8, 8, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
 
-            {/* Completion Rate Trend */}
-            <Card>
+            <Card className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <CardTitle>Approval Rate Trend</CardTitle>
               </CardHeader>
@@ -304,27 +293,13 @@ const Dashboard = () => {
                   <AreaChart data={trendData}>
                     <defs>
                       <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
-                        <stop
-                          offset="5%"
-                          stopColor="hsl(var(--chart-2))"
-                          stopOpacity={0.3}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor="hsl(var(--chart-2))"
-                          stopOpacity={0}
-                        />
+                        <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis
-                      dataKey="month"
-                      stroke="hsl(var(--muted-foreground))"
-                    />
-                    <YAxis
-                      stroke="hsl(var(--muted-foreground))"
-                      domain={[0, 100]}
-                    />
+                    <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
+                    <YAxis stroke="hsl(var(--muted-foreground))" domain={[0, 100]} />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: "hsl(var(--card))",
@@ -348,10 +323,8 @@ const Dashboard = () => {
             </Card>
           </div>
 
-          {/* Right Column - Activity & Insights */}
           <div className="space-y-6">
-            {/* Status Distribution Pie Chart */}
-            <Card>
+            <Card className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <CardTitle>Status Distribution</CardTitle>
               </CardHeader>
@@ -363,9 +336,7 @@ const Dashboard = () => {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) =>
-                        `${(percent * 100).toFixed(0)}%`
-                      }
+                      label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
                       outerRadius={60}
                       fill="#8884d8"
                       dataKey="value"
@@ -381,10 +352,7 @@ const Dashboard = () => {
                   {statusChartData.map((item, index) => (
                     <div key={index} className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2">
-                        <div
-                          className="h-3 w-3 rounded-full"
-                          style={{ backgroundColor: item.color }}
-                        />
+                        <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
                         <span>{item.name}</span>
                       </div>
                       <span className="font-medium">{item.value}</span>
@@ -394,31 +362,19 @@ const Dashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Recent Activity */}
-            <Card>
+            <Card className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <CardTitle>Recent Activity</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {recentActivity.map((activity) => (
-                    <div
-                      key={activity.id}
-                      className="flex items-start gap-3 pb-4 border-b last:border-0 last:pb-0"
-                    >
+                    <div key={activity.id} className="flex items-start gap-3 pb-4 border-b last:border-0 last:pb-0">
                       <div className="mt-1">
-                        {activity.status === "approved" && (
-                          <CheckCircle className="h-5 w-5 text-success" />
-                        )}
-                        {activity.status === "rejected" && (
-                          <XCircle className="h-5 w-5 text-destructive" />
-                        )}
-                        {activity.status === "under_review" && (
-                          <AlertCircle className="h-5 w-5 text-warning" />
-                        )}
-                        {activity.status === "pending" && (
-                          <Clock className="h-5 w-5 text-muted-foreground" />
-                        )}
+                        {activity.status === "approved" && <CheckCircle className="h-5 w-5 text-success" />}
+                        {activity.status === "rejected" && <XCircle className="h-5 w-5 text-destructive" />}
+                        {activity.status === "under_review" && <AlertCircle className="h-5 w-5 text-warning" />}
+                        {activity.status === "pending" && <Clock className="h-5 w-5 text-muted-foreground" />}
                       </div>
                       <div className="flex-1 space-y-1">
                         <p className="text-sm font-medium">{activity.user}</p>
@@ -433,8 +389,7 @@ const Dashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Top Rejection Reasons */}
-            <Card>
+            <Card className="hover:shadow-lg transition-shadow">
               <CardHeader>
                 <CardTitle>Top Rejection Reasons</CardTitle>
               </CardHeader>
@@ -448,7 +403,7 @@ const Dashboard = () => {
                       </div>
                       <div className="w-full bg-muted rounded-full h-2">
                         <div
-                          className="bg-destructive h-2 rounded-full"
+                          className="bg-destructive h-2 rounded-full transition-all"
                           style={{ width: `${(reason.count / 30) * 100}%` }}
                         />
                       </div>
@@ -460,8 +415,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* KYC Table */}
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
             <div className="flex flex-col gap-4">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -490,7 +444,7 @@ const Dashboard = () => {
                   </SelectContent>
                 </Select>
                 <Button variant="outline" size="sm">
-                  <FileText className="h-4 w-4 mr-2" />
+                  <Download className="h-4 w-4 mr-2" />
                   Export
                 </Button>
               </div>
@@ -518,33 +472,22 @@ const Dashboard = () => {
                     >
                       <TableCell className="font-medium">{record.id}</TableCell>
                       <TableCell>{record.userName}</TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {record.email}
-                      </TableCell>
+                      <TableCell className="hidden md:table-cell">{record.email}</TableCell>
                       <TableCell>
-                        <Badge
-                          className={getStatusColor(record.status)}
-                          variant="secondary"
-                        >
+                        <Badge className={getStatusColor(record.status)} variant="secondary">
                           {record.status.replace("_", " ")}
                         </Badge>
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        {formatDate(record.submittedAt)}
-                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">{formatDate(record.submittedAt)}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div className="w-full max-w-[100px] bg-muted rounded-full h-2">
                             <div
                               className="bg-primary h-2 rounded-full transition-all"
-                              style={{
-                                width: `${record.completionPercentage}%`,
-                              }}
+                              style={{ width: `${record.completionPercentage}%` }}
                             />
                           </div>
-                          <span className="text-xs text-muted-foreground">
-                            {record.completionPercentage}%
-                          </span>
+                          <span className="text-xs text-muted-foreground">{record.completionPercentage}%</span>
                         </div>
                       </TableCell>
                     </TableRow>
